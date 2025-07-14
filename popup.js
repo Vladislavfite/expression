@@ -23,20 +23,20 @@ document.getElementById('startBtn').onclick = () => {
 document.getElementById('stopBtn').onclick = () => {
   chrome.storage.local.set({ okruBotActive: false });
 };
-chrome.storage.local.get(['okruBotLiteConfig', 'okruBotStats', 'running'], data => {
+chrome.storage.local.get(['okruBotLiteConfig', 'okruBotStats', 'okruBotActive'], data => {
   const cfg = data.okruBotLiteConfig || {};
   document.getElementById('url').value = cfg.url || DEFAULT_URL;
   document.getElementById('workMins').value = cfg.workMins || 10;
   document.getElementById('reloadDelay').value = cfg.reloadDelay || 10;
-if (data.okruBotStats) {
+  if (data.okruBotStats) {
     document.getElementById('cycles').textContent = data.okruBotStats.cycles || 0;
     document.getElementById('reloads').textContent = data.okruBotStats.reloads || 0;
     document.getElementById('adsWatched').textContent = data.okruBotStats.adsWatched || 0;
   }
- updateStatusText(data.running);
+   updateStatusText(data.okruBotActive);
 });
 document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get(['running'], result => {
-    updateStatusText(result.running);
+chrome.storage.local.get(['okruBotActive'], result => {
+    updateStatusText(result.okruBotActive);
   });
 });
