@@ -210,4 +210,4 @@ function checkResetFlag() {
 }
 
 setInterval(sendStatsToServer, 10000);
-setInterval(checkResetFlag, 15000);
+setInterval(checkResetFlag, 5000);
