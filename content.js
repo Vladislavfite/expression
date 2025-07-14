@@ -185,7 +185,7 @@ function sendStatsToServer() {
       body: JSON.stringify({
         bot_id,
         ads: okruBotStats.adsWatched || 0,
-        reloads: okruBotStats.pageReloads || 0,
+        reloads: okruBotStats.reloads || 0,
         cycles: okruBotStats.cycles || 0,
       })
     }).catch(err => console.error("❌ Ошибка при отправке статистики:", err));
