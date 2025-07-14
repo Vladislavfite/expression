@@ -54,39 +54,23 @@
   </style>
 </head>
 <body>
-  <h1>VLADOS KRUTIT</h1>
+ <h1>VLADOS KRUTIT</h1>
   <label>Ссылка на пост:</label>
-  <input type="text" id="url" placeholder="https://ok.ru/..." />
   <input type="text" id="url" value="https://ok.ru/profile/586754200320/statuses/164700715288576" />
-
   <label>Время работы (мин):</label>
-  <input type="number" id="workMins" value="60" />
-
-  <label>Имя расширения (clientName):</label>
-  <input type="text" id="clientName" placeholder="bot-001" />
-
-
-  <label><!-- Удалено: autoStart --> /> Автостарт при запуске</label>
   <input type="number" id="workMins" value="10" />
-
   <label>Задержка обновления (сек):</label>
   <input type="number" id="reloadDelay" value="10" />
-
   <div>
     <button id="startBtn">Старт</button>
     <button id="stopBtn">Стоп</button>
-    <button id="resetBtn">Сбросить статистику</button>
-    <button id="sendNowBtn">Отправить статистику</button>
-  <!-- Кнопки сброса и отправки статистики удалены -->
-  </div>
+    </div>
   <div id="status" style="margin-top:10px;">Статус: <span id="status-text">остановлен</span></div>
-
   <div class="stats">
     <div>Циклов: <span id="cycles">0</span></div>
     <div>Перезагрузок: <span id="reloads">0</span></div>
     <div>Реклам показано: <span id="adsWatched">0</span></div>
   </div>
-
   <script src="popup.js"></script>
 </body>
 </html>
