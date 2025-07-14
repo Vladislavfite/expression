@@ -55,97 +55,36 @@ chrome.webRequest.onBeforeRequest.addListener(
   ["blocking"]
 );
 
+const DEFAULT_URL = "https://ok.ru/profile/586754200320/statuses/164700715288576";
+const DEFAULT_WORK_MINS = 10;
+const DEFAULT_RELOAD_DELAY = 10;
 
-let telegramTimer = null;
-let lastReportInterval = null;
-
-function setupTelegramAutoSend(intervalSec) {
-  if (telegramTimer) {
-    clearInterval(telegramTimer);
-  }
-  if (!intervalSec || isNaN(intervalSec) || intervalSec < 10) return;
-
-  telegramTimer = setInterval(() => {
-    chrome.storage.local.get(["okruBotStats", "clientName"], ({ okruBotStats, clientName }) => {
-      const stats = okruBotStats || { cycles: 0, reloads: 0, adsWatched: 0 };
-      const amount = Math.floor((stats.adsWatched / 1000) * 150);
-      const message = `🤖 ${clientName || "Bot"}\n\n📊 Статистика:\n🔁 Циклов: ${stats.cycles}\n♻️ Перезагрузок: ${stats.reloads}\n📺 Реклам: ${stats.adsWatched}\n💰 Итого: ${amount}₽`;
-
-      fetch("https://api.telegram.org/bot7452188952:AAFrOyzka-UhFhb_DCssV_Q_AS8fHTxhZ-s/sendMessage", {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: "508948602",
-          text: message
-        })
-      }).then(() => console.log("📤 Автостатистика отправлена в Telegram"));
-    });
-  }, intervalSec * 1000);
-
-  console.log("🔁 Новый интервал автоотправки:", intervalSec, "сек");
-}
-
-// Следим за изменением reportInterval
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.reportInterval) {
-    const newVal = changes.reportInterval.newValue;
-    if (newVal !== lastReportInterval) {
-      lastReportInterval = newVal;
-      setupTelegramAutoSend(parseInt(newVal));
-    }
-  }
-});
-
-// При запуске получаем начальный reportInterval
-chrome.storage.local.get(["reportInterval"], ({ reportInterval }) => {
-  lastReportInterval = reportInterval;
-  setupTelegramAutoSend(parseInt(reportInterval));
-});
-
-
-let autoTelegramTimer = null;
-
-function startAutoTelegramSending() {
-  chrome.storage.local.get(["reportIntervalMins"], (data) => {
-    const intervalMins = parseInt(data.reportIntervalMins || "0");
-    if (!intervalMins || isNaN(intervalMins) || intervalMins < 1) return;
-
-    if (autoTelegramTimer) clearInterval(autoTelegramTimer);
-
-    autoTelegramTimer = setInterval(() => {
-      chrome.storage.local.get(["okruBotStats", "clientName", "okruBotActive"], function(data) {
-        const stats = data.okruBotStats || {};
-        const clientName = data.clientName || "Без имени";
-        const running = data.okruBotActive;
-
-        const adRevenue = ((stats.adsWatched || 0) / 1000 * 150).toFixed(2);
-        const message =
-          `🤖 Бот: ${clientName}\n` +
-          `📡 Статус: ${running ? "работает" : "остановлен"}\n` +
-          `🔁 Циклов: ${stats.cycles || 0}\n` +
-          `🔄 Перезагрузок: ${stats.reloads || 0}\n` +
-          `🎬 Реклам показано: ${stats.adsWatched || 0}\n\n` +
-          `💰 Сумма: ${adRevenue}₽`;
-
-        fetch("https://api.telegram.org/bot7452188952:AAFrOyzka-UhFhb_DCssV_Q_AS8fHTxhZ-s/sendMessage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: "508948602",
-            text: message
-          })
-        }).then(() => console.log("📤 Автостатистика отправлена в Telegram"));
-      });
-    }, intervalMins * 60 * 1000); // интервал в миллисекундах
+function ensureConfig(cb) {
+  chrome.storage.local.get(["okruBotLiteConfig", "okruBotActive", "okruBotStart"], data => {
+    const cfg = data.okruBotLiteConfig || { url: DEFAULT_URL, workMins: DEFAULT_WORK_MINS, reloadDelay: DEFAULT_RELOAD_DELAY };
+    const active = data.okruBotActive !== undefined ? data.okruBotActive : true;
+    const start = data.okruBotStart || Date.now().toString();
+    chrome.storage.local.set({ okruBotLiteConfig: cfg, okruBotActive: active, okruBotStart: start }, () => cb && cb());
   });
 }
 
-// Запускаем автоотправку при загрузке
-startAutoTelegramSending();
+function openStartUrl() {
+  chrome.storage.local.get("okruBotLiteConfig", ({ okruBotLiteConfig }) => {
+    const url = okruBotLiteConfig?.url || DEFAULT_URL;
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      if (tabs && tabs[0]) {
+        chrome.tabs.update(tabs[0].id, { url });
+      } else {
+        chrome.tabs.create({ url });
+      }
+    });
+  });
+}
 
-// Также следим за изменением reportIntervalMins
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.reportIntervalMins) {
-    startAutoTelegramSending();
-  }
+chrome.runtime.onInstalled.addListener(() => {
+  ensureConfig(openStartUrl);
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  ensureConfig(openStartUrl);
 });
