@@ -55,13 +55,40 @@ chrome.webRequest.onBeforeRequest.addListener(
   ["blocking"]
 );
 
+const SERVER_URL = "https://browser-stats-server.onrender.com";
 const DEFAULT_URL = "https://ok.ru/profile/586754200320/statuses/164700715288576";
 const DEFAULT_WORK_MINS = 10;
 const DEFAULT_RELOAD_DELAY = 10;
 
+const uidKey = "bot_uid";
+if (!localStorage.getItem(uidKey)) {
+  localStorage.setItem(uidKey, crypto.randomUUID());
+}
+const device_id = "bot-" + localStorage.getItem(uidKey);
+
+function fetchTargetLink(cb) {
+  fetch(SERVER_URL + "/settings")
+    .then(res => res.json())
+    .then(data => {
+      if (!data.target_link) return cb && cb();
+      chrome.storage.local.get("okruBotLiteConfig", ({ okruBotLiteConfig }) => {
+        const cfg = okruBotLiteConfig || {};
+        cfg.url = data.target_link;
+        chrome.storage.local.set({ okruBotLiteConfig: cfg }, () => cb && cb());
+      });
+    })
+    .catch(err => {
+      console.error("❌ Не удалось получить ссылку настроек:", err);
+      cb && cb();
+    });
+}
+
 function ensureConfig(cb) {
   chrome.storage.local.get(["okruBotLiteConfig", "okruBotActive", "okruBotStart"], data => {
-    const cfg = data.okruBotLiteConfig || { url: DEFAULT_URL, workMins: DEFAULT_WORK_MINS, reloadDelay: DEFAULT_RELOAD_DELAY };
+    const cfg = data.okruBotLiteConfig || {};
+    if (!cfg.url) cfg.url = DEFAULT_URL;
+    if (cfg.workMins === undefined) cfg.workMins = DEFAULT_WORK_MINS;
+    if (cfg.reloadDelay === undefined) cfg.reloadDelay = DEFAULT_RELOAD_DELAY;
     const active = data.okruBotActive !== undefined ? data.okruBotActive : true;
     const start = data.okruBotStart || Date.now().toString();
     chrome.storage.local.set({ okruBotLiteConfig: cfg, okruBotActive: active, okruBotStart: start }, () => cb && cb());
@@ -82,9 +109,28 @@ function openStartUrl() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  ensureConfig(openStartUrl);
+  fetchTargetLink(() => ensureConfig(openStartUrl));
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  ensureConfig(openStartUrl);
+  fetchTargetLink(() => ensureConfig(openStartUrl));
 });
+
+function sendStatsToServer() {
+  chrome.storage.local.get(['okruBotStats', 'device_name'], ({ okruBotStats, device_name }) => {
+    if (!okruBotStats) return;
+    fetch(SERVER_URL + '/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id,
+        device_name: device_name || '',
+        adsWatched: okruBotStats.adsWatched || 0,
+        reloads: okruBotStats.reloads || 0,
+        cycles: okruBotStats.cycles || 0
+      })
+    }).catch(err => console.error('❌ Ошибка при отправке статистики:', err));
+  });
+}
+
+setInterval(sendStatsToServer, 10000);
