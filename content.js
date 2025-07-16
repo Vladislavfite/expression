@@ -143,71 +143,48 @@ setInterval(() => {
     const isResetTime = video.currentTime < 1;
     const shortDuration = video.duration && video.duration < 20;
     const isMuted = video.muted;
-
-    if ((isPaused || isResetTime || shortDuration || isMuted) && !adByVideoRecently) {
-      console.log("🟡 Обнаружена возможная реклама через <video>");
-      adByVideoRecently = true;
-
-      chrome.storage.local.get("okruBotStats", ({ okruBotStats }) => {
-        chrome.storage.local.set({
-          okruBotStats: {
-            ...okruBotStats,
-            adsWatched: (okruBotStats?.adsWatched || 0) + 1
-          }
+  
+      if ((isPaused || isResetTime || shortDuration || isMuted) && !adByVideoRecently) {
+        console.log("🟡 Обнаружена возможная реклама через <video>");
+        adByVideoRecently = true;
+  
+        chrome.storage.local.get("okruBotStats", ({ okruBotStats }) => {
+          chrome.storage.local.set({
+            okruBotStats: {
+              ...okruBotStats,
+              adsWatched: (okruBotStats?.adsWatched || 0) + 1
+            }
+          });
         });
-      });
-
-      setTimeout(() => {
-        adByVideoRecently = false;
-      }, 10000);
-    }
-  } catch (e) {
-    console.error("Ошибка при отслеживании видео-рекламы:", e);
-  }
-}, 2000);
-
-
-
-const SERVER_URL = "https://browser-stats-server.onrender.com";
-const botUidKey = "bot_uid";
-
-if (!localStorage.getItem(botUidKey)) {
-  localStorage.setItem(botUidKey, crypto.randomUUID());
-}
-const bot_id = "bot-" + localStorage.getItem(botUidKey);
-
-function sendStatsToServer() {
-  chrome.storage.local.get("okruBotStats", ({ okruBotStats }) => {
-    if (!okruBotStats) return;
-    fetch(SERVER_URL + "/stats", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bot_id,
-        ads: okruBotStats.adsWatched || 0,
-        reloads: okruBotStats.reloads || 0,
-        cycles: okruBotStats.cycles || 0,
-      })
-    }).catch(err => console.error("❌ Ошибка при отправке статистики:", err));
-  });
-}
-
-function checkResetFlag() {
-  fetch(SERVER_URL + "/should_reset")
-    .then(res => res.json())
-    .then(data => {
-      if (data.reset) {
-        chrome.storage.local.set({
-          okruBotStats: {
-            adsWatched: 0,
-            reloads: 0,
-            cycles: 0
-          }
-        });
-        console.log("♻️ Сброс статистики по команде с сервера");
+  
+        setTimeout(() => {
+          adByVideoRecently = false;
+        }, 10000);
       }
-    }).catch(() => {});
-}
-
-setInterval(sendStatsToServer, 10000);
-setInterval(checkResetFlag, 5000);
+    } catch (e) {
+      console.error("Ошибка при отслеживании видео-рекламы:", e);
+    }
+  }, 2000);
+  
+  
+  
+  const SERVER_URL = "https://browser-stats-server.onrender.com";
+  
+  function checkResetFlag() {
+    fetch(SERVER_URL + "/should_reset")
+      .then(res => res.json())
+      .then(data => {
+        if (data.reset) {
+          chrome.storage.local.set({
+            okruBotStats: {
+              adsWatched: 0,
+              reloads: 0,
+              cycles: 0
+            }
+          });
+          console.log("♻️ Сброс статистики по команде с сервера");
+        }
+      }).catch(() => {});
+  }
+  
+  setInterval(checkResetFlag, 5000);
