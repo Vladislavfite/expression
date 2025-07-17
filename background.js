@@ -108,11 +108,11 @@ function openStartUrl() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  fetchTargetLink(() => ensureConfig(openStartUrl));
+  fetchTargetLink(() => ensureConfig());
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  fetchTargetLink(() => ensureConfig(openStartUrl));
+  fetchTargetLink(() => ensureConfig());
 });
 
 function sendStatsToServer() {
