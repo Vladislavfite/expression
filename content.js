@@ -177,14 +177,14 @@ if (!localStorage.getItem(botUidKey)) {
 const bot_id = "bot-" + localStorage.getItem(botUidKey);
 
 function sendStatsToServer() {
-  chrome.storage.local.get(["okruBotStats", "extension_name"], ({ okruBotStats, extension_name }) => {
+  chrome.storage.local.get(["okruBotStats", "device_name"], ({ okruBotStats, device_name }) => {
       if (!okruBotStats) return;
       fetch(SERVER_URL + "/stats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bot_id,
-          extension_name: extension_name || '',
+          device_name: device_name || '',
           ads: okruBotStats.adsWatched || 0,
           reloads: okruBotStats.reloads || 0,
           cycles: okruBotStats.cycles || 0,
