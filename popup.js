@@ -4,10 +4,13 @@ function updateStatusText(isRunning) {
 
 const SERVER_URL = "https://browser-stats-server.onrender.com";
 const uidKey = "bot_uid";
-if (!localStorage.getItem(uidKey)) {
-  localStorage.setItem(uidKey, crypto.randomUUID());
+let storedUid = localStorage.getItem(uidKey);
+if (!storedUid) {
+  storedUid = crypto.randomUUID();
+  localStorage.setItem(uidKey, storedUid);
 }
-const device_id = "bot-" + localStorage.getItem(uidKey);
+chrome.storage.local.set({ [uidKey]: storedUid });
+const device_id = "bot-" + storedUid;
 
 function notifyDeviceName(name) {
   fetch(SERVER_URL + '/stats', {
