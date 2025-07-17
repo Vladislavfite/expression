@@ -2,6 +2,27 @@ function updateStatusText(isRunning) {
   document.getElementById('status-text').textContent = isRunning ? 'запущен' : 'остановлен';
 }
 
+const SERVER_URL = "https://browser-stats-server.onrender.com";
+const uidKey = "bot_uid";
+if (!localStorage.getItem(uidKey)) {
+  localStorage.setItem(uidKey, crypto.randomUUID());
+}
+const device_id = "bot-" + localStorage.getItem(uidKey);
+
+function notifyExtensionName(name) {
+  fetch(SERVER_URL + '/stats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      device_id,
+      extension_name: name,
+      adsWatched: 0,
+      reloads: 0,
+      cycles: 0
+    })
+  }).catch(err => console.error('❌ Ошибка при отправке имени расширения:', err));
+}
+
 document.getElementById('startBtn').onclick = () => {
   const extensionName = document.getElementById('extensionName').value.trim();
   const workMins = parseInt(document.getElementById('workMins').value, 10);
