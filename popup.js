@@ -41,6 +41,7 @@ document.getElementById('startBtn').onclick = () => {
           chrome.tabs.update(tabs[0].id, { url });
         });
       }
+      notifyExtensionName(extensionName);
     });
   });
 };
