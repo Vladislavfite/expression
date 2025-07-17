@@ -9,22 +9,23 @@ if (!localStorage.getItem(uidKey)) {
 }
 const device_id = "bot-" + localStorage.getItem(uidKey);
 
-function notifyExtensionName(name) {
+function notifyDeviceName(name) {
   fetch(SERVER_URL + '/stats', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       device_id,
-      extension_name: name,
+      device_name: name,
       adsWatched: 0,
       reloads: 0,
       cycles: 0
     })
-  }).catch(err => console.error('❌ Ошибка при отправке имени расширения:', err));
+  }).catch(err => console.error('❌ Ошибка при отправке имени устройства:', err));
 }
 
 document.getElementById('startBtn').onclick = () => {
-  const extensionName = document.getElementById('extensionName').value.trim();
+  const deviceName = document.getElementById('deviceName').value.trim();
+  chrome.storage.local.set({ device_name: deviceName });
   const workMins = parseInt(document.getElementById('workMins').value, 10);
   const reloadDelay = parseInt(document.getElementById('reloadDelay').value, 10);
   chrome.storage.local.get('okruBotLiteConfig', ({ okruBotLiteConfig }) => {
@@ -33,7 +34,7 @@ document.getElementById('startBtn').onclick = () => {
       okruBotLiteConfig: { ...(okruBotLiteConfig || {}), workMins, reloadDelay },
       okruBotStart: Date.now().toString(),
       okruBotActive: true,
-      extension_name: extensionName,
+      device_name: deviceName,
       okruBotStats: { cycles: 0, reloads: 0, adsWatched: 0 }
     }, () => {
       if (url) {
@@ -41,7 +42,7 @@ document.getElementById('startBtn').onclick = () => {
           chrome.tabs.update(tabs[0].id, { url });
         });
       }
-      notifyExtensionName(extensionName);
+      notifyDeviceName(deviceName);
     });
   });
 };
@@ -50,9 +51,9 @@ document.getElementById('stopBtn').onclick = () => {
   chrome.storage.local.set({ okruBotActive: false });
 };
 
-chrome.storage.local.get(['okruBotLiteConfig', 'okruBotStats', 'okruBotActive', 'extension_name'], data => {
+chrome.storage.local.get(['okruBotLiteConfig', 'okruBotStats', 'okruBotActive', 'device_name'], data => {
   const cfg = data.okruBotLiteConfig || {};
-  document.getElementById('extensionName').value = data.extension_name || '';
+  document.getElementById('deviceName').value = data.device_name || '';
   document.getElementById('workMins').value = cfg.workMins || 10;
   document.getElementById('reloadDelay').value = cfg.reloadDelay || 10;
   if (data.okruBotStats) {
