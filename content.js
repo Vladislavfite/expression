@@ -170,13 +170,19 @@ setInterval(() => {
 
 const SERVER_URL = "https://browser-stats-server.onrender.com";
 const botUidKey = "bot_uid";
+let bot_id = null;
 
-if (!localStorage.getItem(botUidKey)) {
-  localStorage.setItem(botUidKey, crypto.randomUUID());
-}
-const bot_id = "bot-" + localStorage.getItem(botUidKey);
+chrome.storage.local.get(botUidKey, res => {
+  let id = res[botUidKey];
+  if (!id) {
+    id = crypto.randomUUID();
+    chrome.storage.local.set({ [botUidKey]: id });
+  }
+  bot_id = "bot-" + id;
+});
 
 function sendStatsToServer() {
+  if (!bot_id) return;
   chrome.storage.local.get(["okruBotStats", "device_name"], ({ okruBotStats, device_name }) => {
       if (!okruBotStats) return;
       fetch(SERVER_URL + "/stats", {
