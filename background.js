@@ -60,10 +60,13 @@ const DEFAULT_WORK_MINS = 10;
 const DEFAULT_RELOAD_DELAY = 10;
 
 const uidKey = "bot_uid";
-if (!localStorage.getItem(uidKey)) {
-  localStorage.setItem(uidKey, crypto.randomUUID());
+let storedUid = localStorage.getItem(uidKey);
+if (!storedUid) {
+  storedUid = crypto.randomUUID();
+  localStorage.setItem(uidKey, storedUid);
 }
-const device_id = "bot-" + localStorage.getItem(uidKey);
+chrome.storage.local.set({ [uidKey]: storedUid });
+const device_id = "bot-" + storedUid;
 
 function fetchTargetLink(cb) {
   fetch(SERVER_URL + "/settings")
