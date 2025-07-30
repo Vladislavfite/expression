@@ -175,7 +175,7 @@ let bot_id = null;
 chrome.storage.local.get(botUidKey, res => {
   let id = res[botUidKey];
   if (!id) {
-    id = crypto.randomUUID();
+   id = crypto.randomUUID();
     chrome.storage.local.set({ [botUidKey]: id });
   }
   bot_id = "bot-" + id;
@@ -200,7 +200,8 @@ function sendStatsToServer() {
   }
 
 function checkResetFlag() {
-  fetch(SERVER_URL + "/should_reset")
+  if (!bot_id) return;
+  fetch(`${SERVER_URL}/should_reset?bot_id=${bot_id}`)
     .then(res => res.json())
     .then(data => {
       if (data.reset) {
@@ -216,5 +217,28 @@ function checkResetFlag() {
     }).catch(() => {});
 }
 
+function checkRestartFlag() {
+  if (!bot_id) return;
+  fetch(`${SERVER_URL}/should_restart?bot_id=${bot_id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.restart) {
+        chrome.storage.local.get(["okruBotLiteConfig"], ({ okruBotLiteConfig }) => {
+          const url = okruBotLiteConfig?.url;
+          chrome.storage.local.set({
+            okruBotStats: { cycles: 0, reloads: 0, adsWatched: 0 },
+            okruBotStart: Date.now().toString(),
+            okruBotActive: true,
+          }, () => {
+            if (url) location.href = url;
+          });
+        });
+        console.log("🔄 Перезапуск по команде сервера");
+      }
+    })
+    .catch(() => {});
+}
+
 setInterval(sendStatsToServer, 10000);
 setInterval(checkResetFlag, 5000);
+setInterval(checkRestartFlag, 5000);
