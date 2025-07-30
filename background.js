@@ -136,3 +136,27 @@ function sendStatsToServer() {
 }
 
 setInterval(sendStatsToServer, 10000);
+
+function restartExtension() {
+  chrome.storage.local.set({
+    okruBotStats: { cycles: 0, reloads: 0, adsWatched: 0 },
+    okruBotStart: Date.now().toString(),
+    okruBotActive: true,
+  }, () => {
+    openStartUrl();
+  });
+}
+
+function checkRestartFlag() {
+  fetch(`${SERVER_URL}/should_restart?bot_id=${device_id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.restart) {
+        console.log('🔄 Перезапуск по команде сервера');
+        restartExtension();
+      }
+    })
+    .catch(() => {});
+}
+
+setInterval(checkRestartFlag, 5000);
